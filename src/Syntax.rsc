@@ -32,7 +32,7 @@ syntax Expr
   		| leq:		Expr "\<=" Expr
   		| greater:	Expr "\>" Expr
   		| geq:		Expr "\>=" Expr)
-  > left (equal:	Expr "==" Expr
+  > left (eq:		Expr "==" Expr
   		| neq:		Expr "!=" Expr)
   > left and:		Expr "&&" Expr
   > left or:		Expr "||" Expr
@@ -43,7 +43,7 @@ syntax Expr
   ;
   
 syntax Type
-  = lit_type: "boolean" | "integer" | "string";  
+  = "boolean" | "integer" | "string";  
   
 keyword Reserved
   = "true" | "false" | "if" | "else" | "form" | "boolean" | "integer" | "string";

@@ -1,29 +1,22 @@
 module AST
 
-/*
- * Define Abstract Syntax for QL
- *
- * - complete the following data types
- * - make sure there is an almost one-to-one correspondence with the grammar
- */
-
 data AForm(loc src = |tmp:///|)
-  = form(str name, list[AQuestion] questions)
-  ; 
+  = form(AId id, list[AQuestion] questions)
+  ;
 
 data AQuestion(loc src = |tmp:///|)
-  = if_then_else(str name, list[AExpr] qs1, list[AExpr] qs2)
-  | if_then(str name, list[AExpr] qs)
-  | computed_question() //todo
-  | question() //todo
+  = if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs)
+  | if_then(AExpr e, list[AQuestion] if_qs)
+  | computed_question(str s, AId id, AType t, AExpr e)
+  | question(str s, AId id, AType t)
   | block(list[AQuestion] qs)
   ;
 
 data AExpr(loc src = |tmp:///|)
   = ref(AId id)
-  | string(str literal)
-  | integer(int number)
-  | boolean(bool binary)
+  | string(str s)
+  | integer(int i)
+  | boolean(bool b)
   | brackets(AExpr expr)
   | not(AExpr expr)
   | mul(AExpr lhs, AExpr rhs)
@@ -34,7 +27,7 @@ data AExpr(loc src = |tmp:///|)
   | leq(AExpr lhs, AExpr rhs)
   | greater(AExpr lhs, AExpr rhs)
   | geq(AExpr lhs, AExpr rhs)
-  | equal(AExpr lhs, AExpr rhs)
+  | eq(AExpr lhs, AExpr rhs)
   | neq(AExpr lhs, AExpr rhs)
   | and(AExpr lhs, AExpr rhs)
   | or(AExpr lhs, AExpr rhs)
@@ -43,4 +36,8 @@ data AExpr(loc src = |tmp:///|)
 data AId(loc src = |tmp:///|)
   = id(str name);
 
-data AType(loc src = |tmp:///|);
+data AType(loc src = |tmp:///|)
+  = string()
+  | integer()
+  | boolean()
+  ;
