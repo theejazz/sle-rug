@@ -49,9 +49,14 @@ void main() {
   registerContributions(MyQL, contribs);
 }
 
+AForm astQL(loc file){
+	return cst2ast(parse(#Form, file));
+}
+
 set[Message] checkQL(loc file){
 	ast = cst2ast(parse(#Form, file));
 	<_,_,usedef> = resolve(ast);
 	tenv = collect(ast);
 	return check(ast, tenv, usedef);
 }
+

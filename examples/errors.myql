@@ -1,7 +1,11 @@
 form taxOfficeExample { 
   "Did you buy a house in 2010?"
-    hasBoughtHouse: boolean
-    
+    hasBoughtHouse: integer
+   
+  "double"
+  	doubleHasBoughtHouse: integer =
+  		(hasBoughtHouse * 2)
+  		
   "Did you enter a loan?"
     hasMaintLoan: boolean
     

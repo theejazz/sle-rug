@@ -4,7 +4,9 @@ import AST;
 import Resolve;
 import Message; // see standard library
 import Set;
+import List;
 import IO;
+import Math;
 
 data Type
   = tint()
@@ -38,16 +40,15 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 // - duplicate labels should trigger a warning 
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
-  set[Message] msgs = {};
-  
+  set[Message] msgs = {}; 
   switch (q) {
     case if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs):
-      msgs +=  	check(e, tenv, useDef) +
-      			union({check(q, tenv, useDef) | q <- if_qs}) + 
-      			union({check(q, tenv, useDef) | q <- else_qs});
+      msgs +=  	check(e, tenv, useDef) + 
+      			union({check(if_q, tenv, useDef) | if_q <- if_qs}) + 
+      			union({check(else_q, tenv, useDef) | else_q <- else_qs});
     case if_then(AExpr e, list[AQuestion] if_qs):
-      msgs += 	check(e, tenv, useDef) + 
-      			union({check(q, tenv, useDef) | q <- if_qs});
+      msgs += 	check(e, tenv, useDef) +
+      			union({check(if_q, tenv, useDef) | if_q <- if_qs});
     case computed_question(ALabel lbl, AId id, AType t, AExpr e):
       msgs += 	differentTypes(id, t, tenv) +
       			duplicateLabels(lbl, tenv) +
@@ -59,7 +60,6 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
     case block(list[AQuestion] qs):
       msgs += union({check(q, tenv, useDef) | q <- qs});
   }
-  
   return msgs; 
 }
 
@@ -86,7 +86,8 @@ set[Message] duplicateLabels(ALabel lbl, TEnv tenv) {
 }
 
 set[Message] declaredType(AType atyp, loc src, AExpr aexp, TEnv tenv, UseDef useDef) {
-	if(ofType(atyp) != aexp){
+    print(type2str(typeOf(atyp)) + ":" + type2str(typeOf(aexp, tenv, useDef)) + "\n");
+	if(typeOf(atyp) != typeOf(aexp, tenv, useDef)){
 		return {error("Expression not of declared type", src)}; 
 	}
 	return {};
@@ -101,11 +102,43 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   switch (e) {
     case ref(AId x):
       msgs += { error("Undeclared question", x.src) | useDef[x.src] == {} };
-
-    // etc.
+	case brackets(AExpr e):
+	  msgs += check(e, tenv, useDef);
+	case not(AExpr e):
+	  msgs += check(e, tenv, useDef);
   }
   
   return msgs; 
+}
+
+Type typeOfInteger(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
+	tlhs = typeOf(lhs, tenv, useDef);
+	trhs = typeOf(rhs, tenv, useDef);
+	if(tlhs == tint() && trhs == tint()){
+		return tint();
+	}
+	
+	return tunknown();
+}
+
+Type typeOfBoolean(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
+	tlhs = typeOf(lhs, tenv, useDef);
+	trhs = typeOf(rhs, tenv, useDef);
+	if(tlhs == tbool() && trhs == tbool()){
+		return tbool();
+	}
+	
+	return tunknown();
+}
+
+Type typeOfAny(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
+	tlhs = typeOf(lhs, tenv, useDef);
+	trhs = typeOf(rhs, tenv, useDef);
+	if(tlhs == trhs){
+		return tlhs;
+	}
+	
+	return tunknown();
 }
 
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
@@ -114,7 +147,40 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
       if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
         return t;
       }
-    // etc.
+    case string(str _):
+      return tstr();
+    case integer(int _):
+      return tint();
+    case boolean(bool _):
+      return tbool();
+    case brackets(AExpr exp):
+      return typeOf(exp, tenv, useDef);
+    case not(AExpr exp):
+      return typeOf(exp, tenv, useDef);
+    case mul(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case dif(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case sum(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case min(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case less(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case leq(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case greater(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case geq(AExpr lhs, AExpr rhs):
+  	  return typeOfInteger(lhs, rhs, tenv, useDef);
+    case eq(AExpr lhs, AExpr rhs):
+  	  return typeOfAny(lhs, rhs, tenv, useDef);
+    case neq(AExpr lhs, AExpr rhs):
+  	  return typeOfAny(lhs, rhs, tenv, useDef);
+    case and(AExpr lhs, AExpr rhs):
+  	  return typeOfBoolean(lhs, rhs, tenv, useDef);
+    case or(AExpr lhs, AExpr rhs):
+  	  return typeOfBoolean(lhs, rhs, tenv, useDef);
   }
   return tunknown(); 
 }
@@ -129,6 +195,18 @@ Type typeOf(AType t){
 			return tstr();
 	}
 	return tunknown();
+}
+
+str type2str(Type t){
+	switch(t) {
+		case tint():
+			return "int";
+		case tbool():
+			return "boolean";
+		case tstr():
+			return "string";
+	}
+	return "unknown";
 }
 
 /* 
