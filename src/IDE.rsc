@@ -48,3 +48,10 @@ void main() {
   
   registerContributions(MyQL, contribs);
 }
+
+set[Message] checkQL(loc file){
+	ast = cst2ast(parse(#Form, file));
+	<_,_,usedef> = resolve(ast);
+	tenv = collect(ast);
+	return check(ast, tenv, usedef);
+}

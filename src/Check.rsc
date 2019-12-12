@@ -51,7 +51,7 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
     case computed_question(ALabel lbl, AId id, AType t, AExpr e):
       msgs += 	differentTypes(id, t, tenv) +
       			duplicateLabels(lbl, tenv) +
-      			declaredType(q, e, tenv, useDef) +
+      			declaredType(t,id.src, e, tenv, useDef) +
       			check(e, tenv, useDef);
     case question(ALabel lbl, AId id, AType t):
       msgs += 	differentTypes(id, t, tenv) +
@@ -85,7 +85,10 @@ set[Message] duplicateLabels(ALabel lbl, TEnv tenv) {
 	return {};
 }
 
-set[Message] declaredType(AQuestion q, AExpr e, TEnv tenv, UseDef useDef) {
+set[Message] declaredType(AType atyp, loc src, AExpr aexp, TEnv tenv, UseDef useDef) {
+	if(ofType(atyp) != aexp){
+		return {error("Expression not of declared type", src)}; 
+	}
 	return {};
 }
 
