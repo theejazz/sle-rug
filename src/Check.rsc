@@ -86,7 +86,6 @@ set[Message] duplicateLabels(ALabel lbl, TEnv tenv) {
 }
 
 set[Message] declaredType(AType atyp, loc src, AExpr aexp, TEnv tenv, UseDef useDef) {
-    print(type2str(typeOf(atyp)) + ":" + type2str(typeOf(aexp, tenv, useDef)) + "\n");
 	if(typeOf(atyp) != typeOf(aexp, tenv, useDef)){
 		return {error("Expression not of declared type", src)}; 
 	}
@@ -106,7 +105,62 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 	  msgs += check(e, tenv, useDef);
 	case not(AExpr e):
 	  msgs += check(e, tenv, useDef);
-	}
+	case mul(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case div(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case sum(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case min(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case less(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case leq(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case greater(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case geq(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case eq(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case neq(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case and(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	case or(AExpr lhs, AExpr rhs):
+	  msgs += 	check(lhs, tenv, useDef) +
+	  			check(rhs, tenv, useDef);
+	  			
+	}  
+  msgs += { 
+  	error(
+  	type2str(typeOf(lhs, tenv, useDef)) + " and/or " + type2str(typeOf(rhs, tenv, useDef)) + " not of type int", e.src) |
+  	(
+  		mul(AExpr lhs, AExpr rhs) := e ||
+  		div(AExpr lhs, AExpr rhs) := e ||
+  		sum(AExpr lhs, AExpr rhs) := e ||
+  		min(AExpr lhs, AExpr rhs) := e ||
+  		less(AExpr lhs, AExpr rhs) := e ||
+  		leq(AExpr lhs, AExpr rhs) := e ||
+  		greater(AExpr lhs, AExpr rhs) := e ||
+  		geq(AExpr lhs, AExpr rhs) := e 
+  	) && (
+  		typeOf(rhs, tenv, useDef) != tint() ||
+  		typeOf(lhs, tenv, useDef) != tint()
+  	)
+  };
+  
   
   return msgs; 
 }
