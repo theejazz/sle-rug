@@ -51,7 +51,7 @@ AQuestion cst2ast(Question q) {
 AExpr cst2ast(Expr e) {
   switch (e) {
     case (Expr) `<Id x>`: 
-      return ref("<x>", src=e@\loc);
+      return ref(id("<x>", src=e@\loc));
     case (Expr) `<Str x>`: 
       return string("<x>", src=e@\loc);
     case (Expr) `<Int x>`: 
