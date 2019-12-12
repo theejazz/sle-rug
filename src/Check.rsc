@@ -19,8 +19,8 @@ alias TEnv = rel[loc def, str name, str label, Type \type];
 // To avoid recursively traversing the form, use the `visit` construct
 // or deep match (e.g., `for (/question(...) := f) {...}` ) 
 TEnv collect(AForm f) {
-  return {<i.src, i.name, l.label, tint()> | /question(ALabel l, AId i, AType _) := f 
-  							   || /computed_question(ALabel l, AId i, AType _, _) := f}; 
+  return {<i.src, i.name, l.label, typeOf(t)> | /question(ALabel l, AId i, AType t) := f 
+  							   || /computed_question(ALabel l, AId i, AType t, _) := f}; 
 }
 
 set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
@@ -49,12 +49,12 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
       msgs += 	check(e, tenv, useDef) + 
       			union({check(q, tenv, useDef) | q <- if_qs});
     case computed_question(ALabel lbl, AId id, AType t, AExpr e):
-      msgs += 	differentTypes(q, tenv, useDef) +
+      msgs += 	differentTypes(id, t, tenv) +
       			duplicateLabels(lbl, tenv) +
       			declaredType(q, e, tenv, useDef) +
       			check(e, tenv, useDef);
     case question(ALabel lbl, AId id, AType t):
-      msgs += 	differentTypes(q, tenv, useDef) +
+      msgs += 	differentTypes(id, t, tenv) +
       			duplicateLabels(lbl, tenv);
     case block(list[AQuestion] qs):
       msgs += union({check(q, tenv, useDef) | q <- qs});
@@ -63,14 +63,18 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   return msgs; 
 }
 
-set[Message] differentTypes(AQuestion q, TEnv tenv, UseDef useDef) {
-	return {};
+set[Message] differentTypes(AId id, AType typ, TEnv tenv) {
+	for (<_,name,_,t> <- tenv){
+		if (name == id.name && t != typeOf(typ)){
+			return {error("Multiple declared questions of different types", id.src)};
+		} 
+	}
+	return {};	
 }
 
 set[Message] duplicateLabels(ALabel lbl, TEnv tenv) {
 	int count = 0;
 	for (<_,_,label,_> <- tenv){
-				print(label + ":" + lbl.label + "\n");
 		if(label == lbl.label){
 			if(count == 1){
 				return {warning("Duplicate label", lbl.src)};
@@ -110,6 +114,18 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
     // etc.
   }
   return tunknown(); 
+}
+
+Type typeOf(AType t){
+	switch (t) {
+		case integer():
+			return tint();
+		case boolean():
+			return tbool();
+		case string():
+			return tstr();
+	}
+	return tunknown();
 }
 
 /* 
