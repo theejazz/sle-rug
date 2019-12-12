@@ -5,6 +5,7 @@ import AST;
 
 import ParseTree;
 import String;
+import Boolean;
 
 /*
  * Implement a mapping from concrete syntax trees (CSTs) to abstract syntax trees (ASTs)
@@ -33,14 +34,14 @@ AForm cst2ast(f: (Form) `form <Id i> { <Question* qs> }`) {
 
 AQuestion cst2ast(Question q) {
   switch (q) {
-    case (Question) `if ( <Expr e> ) { <Question* if_qs> } else { <Question* else_qs> }`:
-      return if_then(cst2ast(e), [cst2ast(q) | Question q <- if_qs], [cst2ast(q) | Question q <- else_qs], src=q@\loc);
-    case (Question) `if ( <Expr e> ) { <Question* if_qs> }`:
-      return if_then_else(cst2ast(e), [cst2ast(q) | Question q <- if_qs], src=q@\loc);
-    case (Question) `<Str s> <Id i>: <Type t> = <Expr e>`:
-      return computed_question(string("<s>"), id("<i>"), cst2ast(t), cst2ast(e), src=q@\loc);
     case (Question) `<Str s> <Id i>: <Type t>`:
-      return question(string("<s>"), id("<i>"), cst2ast(t), src=q@\loc);
+      return question("<s>", id("<i>"), cst2ast(t), src=q@\loc);
+    case (Question) `<Str s> <Id i>: <Type t> = <Expr e>`:
+      return computed_question("<s>", id("<i>"), cst2ast(t), cst2ast(e), src=q@\loc);
+    case (Question) `if ( <Expr e> ) { <Question* if_qs> }`:
+      return if_then(cst2ast(e), [cst2ast(q) | Question q <- if_qs], src=q@\loc);
+    case (Question) `if ( <Expr e> ) { <Question* if_qs> } else { <Question* else_qs> }`:
+      return if_then_else(cst2ast(e), [cst2ast(q) | Question q <- if_qs], [cst2ast(q) | Question q <- else_qs], src=q@\loc);
     case (Question) `{ <Question* qs> }`:
       return block([cst2ast(q) | Question q <- qs], src=q@\loc);
     default:
@@ -51,7 +52,7 @@ AQuestion cst2ast(Question q) {
 AExpr cst2ast(Expr e) {
   switch (e) {
     case (Expr) `<Id x>`: 
-      return ref("<x>", src=e@\loc);
+      return ref(id("<x>", src=x@\loc), src=e@\loc);
     case (Expr) `<Str x>`: 
       return string("<x>", src=e@\loc);
     case (Expr) `<Int x>`: 
