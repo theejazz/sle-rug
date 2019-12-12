@@ -86,3 +86,16 @@ form taxOfficeExample {
 }
 ```
 
+## command order:
+
+```
+import Syntax;
+import AST;
+import CST2AST;
+import ParseTree;
+import IO;
+fm = ; // location;
+pf = parse(#Form, fm);
+at = cst2ast(pf);
+```
+
