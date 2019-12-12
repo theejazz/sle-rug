@@ -94,7 +94,7 @@ import AST;
 import CST2AST;
 import ParseTree;
 import IO;
-fm = ; // location;
+fm = |project://QL/examples/errors.myql|; // location;
 pf = parse(#Form, fm);
 at = cst2ast(pf);
 ```
