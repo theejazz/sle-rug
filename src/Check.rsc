@@ -3,6 +3,7 @@ module Check
 import AST;
 import Resolve;
 import Message; // see standard library
+import Set;
 
 data Type
   = tint()
@@ -17,18 +18,39 @@ alias TEnv = rel[loc def, str name, str label, Type \type];
 // To avoid recursively traversing the form, use the `visit` construct
 // or deep match (e.g., `for (/question(...) := f) {...}` ) 
 TEnv collect(AForm f) {
-  return {}; 
+  return {<i.src, i.name, l, tint()> | /question(str l, AId i, AType _) := f 
+  							   || /computed_question(str l, AId i, AType _, _) := f}; 
 }
 
 set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
-  return {}; 
+  //lst = for(q <- f.questions){
+  //	msgs = check(q, tenv, useDef);
+  //	for(msg <- msgs) {
+  //	 append(msg);
+  //	}
+  //}
+  //return toSet(lst);
+  return union({check(q, tenv, useDef) |  q <- f.questions}); 
 }
 
 // - produce an error if there are declared questions with the same name but different types.
 // - duplicate labels should trigger a warning 
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
-  return {}; 
+  return differentTypes(q, tenv, useDef) +
+  		 duplicateLabels(q, tenv, useDef) +  
+  		 union({ check(e, tenv, useDef) | /if_then_else(AExpr e, _, _) := q 
+  									   || /if_then(AExpr e, _) := q
+  									   || /computed_question(_,_,_,AExpr e) := q
+  	}	 ); 
+}
+
+set[Message] differentTypes(AQuestion q, TEnv tenv, UseDef useDef) {
+	return {};
+}
+
+set[Message] duplicateLabels(AQuestion q, TEnv tenv, UseDef useDef) {
+	return {};
 }
 
 // Check operand compatibility with operators.
