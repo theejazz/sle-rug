@@ -2,10 +2,6 @@ form taxOfficeExample {
   "Did you buy a house in 2010?"
     hasBoughtHouse: integer
    
-  "double"
-  	doubleHasBoughtHouse: integer =
-  		(hasBoughtHouse * 2)
-  		
   "Did you enter a loan?"
     hasMaintLoan: boolean
     
@@ -15,7 +11,7 @@ form taxOfficeExample {
   "Did you sell a house in 2010?"
     hasSoldHouse: integer
     
-  if (hasSoldHouse) {
+  if (hasSodHouse) {
     "What was the selling price?"
       sellingPrice: boolean
     "Private debts for the sold house:"

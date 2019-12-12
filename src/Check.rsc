@@ -87,7 +87,7 @@ set[Message] duplicateLabels(ALabel lbl, TEnv tenv) {
 
 set[Message] declaredType(AType atyp, loc src, AExpr aexp, TEnv tenv, UseDef useDef) {
 	if(typeOf(atyp) != typeOf(aexp, tenv, useDef)){
-		return {error("Expression not of declared type", src)}; 
+		return {error("Expression not of declared type", aexp.src)}; 
 	}
 	return {};
 }
@@ -172,7 +172,7 @@ Type typeOfInteger(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 		return tint();
 	}
 	
-	return tunknown();
+	return tint();
 }
 
 Type typeOfBoolean(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
@@ -182,7 +182,7 @@ Type typeOfBoolean(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 		return tbool();
 	}
 	
-	return tunknown();
+	return tint();
 }
 
 Type typeOfAny(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
