@@ -106,7 +106,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 	  msgs += check(e, tenv, useDef);
 	case not(AExpr e):
 	  msgs += check(e, tenv, useDef);
-  }
+	}
   
   return msgs; 
 }
