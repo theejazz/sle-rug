@@ -8,7 +8,10 @@ form taxOfficeExample {
   "Did you sell a house in 2010?"
     hasSoldHouse: boolean
     
-  if (hasSodHouse) {
+  "Did you sell a house in 2010?"
+    hasSoldHouse2: boolean
+    
+  if (hasSoldHouse) {
     "What was the selling price?"
       sellingPrice: boolean
     "Private debts for the sold house:"

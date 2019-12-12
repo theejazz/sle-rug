@@ -7,8 +7,8 @@ data AForm(loc src = |tmp:///|)
 data AQuestion(loc src = |tmp:///|)
   = if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs)
   | if_then(AExpr e, list[AQuestion] if_qs)
-  | computed_question(str s, AId id, AType t, AExpr e)
-  | question(str s, AId id, AType t)
+  | computed_question(ALabel lbl, AId id, AType t, AExpr e)
+  | question(ALabel lbl, AId id, AType t)
   | block(list[AQuestion] qs)
   ;
 
@@ -35,6 +35,9 @@ data AExpr(loc src = |tmp:///|)
 
 data AId(loc src = |tmp:///|)
   = id(str name);
+
+data ALabel(loc src = |tmp:///|)
+  = label(str label);
 
 data AType(loc src = |tmp:///|)
   = string()
