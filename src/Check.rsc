@@ -43,11 +43,13 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {}; 
   switch (q) {
     case if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs):
-      msgs +=  	check(e, tenv, useDef) + 
+      msgs +=  	check(e, tenv, useDef) +
+      			checkType(e, tbool(), tenv, useDef) + 
       			union({check(if_q, tenv, useDef) | if_q <- if_qs}) + 
       			union({check(else_q, tenv, useDef) | else_q <- else_qs});
     case if_then(AExpr e, list[AQuestion] if_qs):
       msgs += 	check(e, tenv, useDef) +
+      			checkType(e, tbool(), tenv, useDef) + 
       			union({check(if_q, tenv, useDef) | if_q <- if_qs});
     case computed_question(ALabel lbl, AId id, AType t, AExpr e):
       msgs += 	differentTypes(id, t, tenv) +
@@ -105,64 +107,43 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 	  msgs += check(e, tenv, useDef);
 	case not(AExpr e):
 	  msgs += check(e, tenv, useDef);
-	case mul(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case div(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case sum(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case min(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case less(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case leq(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case greater(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case geq(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case eq(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case neq(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case and(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	case or(AExpr lhs, AExpr rhs):
-	  msgs += 	check(lhs, tenv, useDef) +
-	  			check(rhs, tenv, useDef);
-	  			
 	}  
-  msgs += { 
-  	error(
-  	type2str(typeOf(lhs, tenv, useDef)) + " and/or " + type2str(typeOf(rhs, tenv, useDef)) + " not of type int", e.src) |
-  	(
-  		mul(AExpr lhs, AExpr rhs) := e ||
-  		div(AExpr lhs, AExpr rhs) := e ||
-  		sum(AExpr lhs, AExpr rhs) := e ||
-  		min(AExpr lhs, AExpr rhs) := e ||
-  		less(AExpr lhs, AExpr rhs) := e ||
-  		leq(AExpr lhs, AExpr rhs) := e ||
-  		greater(AExpr lhs, AExpr rhs) := e ||
-  		geq(AExpr lhs, AExpr rhs) := e 
-  	) && (
-  		typeOf(rhs, tenv, useDef) != tint() ||
-  		typeOf(lhs, tenv, useDef) != tint()
-  	)
-  };
-  
+  if(	mul(AExpr lhs, AExpr rhs) := e ||
+		div(AExpr lhs, AExpr rhs) := e ||  		
+		sum(AExpr lhs, AExpr rhs) := e ||  		
+		min(AExpr lhs, AExpr rhs) := e ||  		
+		less(AExpr lhs, AExpr rhs) := e ||  		
+		leq(AExpr lhs, AExpr rhs) := e ||  		
+		greater(AExpr lhs, AExpr rhs) := e ||  		
+		geq(AExpr lhs, AExpr rhs) := e	
+  	){
+    msgs +=	check(lhs, tenv, useDef) +
+    		check(rhs, tenv, useDef) +
+    		checkType(lhs, tint(), tenv, useDef) +
+	  		checkType(rhs, tint(), tenv, useDef);
+  }
+  if(	eq(AExpr lhs, AExpr rhs) := e ||
+		neq(AExpr lhs, AExpr rhs) := e	
+  	){
+    msgs +=	check(lhs, tenv, useDef) +
+    		check(rhs, tenv, useDef) +
+    		checkType(lhs, typeOf(rhs, tenv, useDef), tenv, useDef) +
+	  		checkType(rhs, typeOf(lhs, tenv, useDef), tenv, useDef);
+  }
+  if(	and(AExpr lhs, AExpr rhs) := e ||
+  		or(AExpr lhs, AExpr rhs) := e
+  	){
+    msgs +=	check(lhs, tenv, useDef) +
+    		check(rhs, tenv, useDef) +
+  			checkType(lhs, tbool(), tenv, useDef) +
+	  		checkType(rhs, tbool(), tenv, useDef);
+  }
   
   return msgs; 
+}
+
+set[Message] checkType(AExpr e, Type t, TEnv tenv, UseDef useDef){
+  return {error("Operator requires type: [" + type2str(t) + "]", e.src) | typeOf(e, tenv, useDef) != t};
 }
 
 Type typeOfInteger(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
@@ -172,7 +153,7 @@ Type typeOfInteger(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 		return tint();
 	}
 	
-	return tint();
+	return tunknown();
 }
 
 Type typeOfBoolean(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
@@ -182,14 +163,14 @@ Type typeOfBoolean(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 		return tbool();
 	}
 	
-	return tint();
+	return tunknown();
 }
 
-Type typeOfAny(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
+Type typeOfComp(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 	tlhs = typeOf(lhs, tenv, useDef);
 	trhs = typeOf(rhs, tenv, useDef);
 	if(tlhs == trhs){
-		return tlhs;
+		return tbool();
 	}
 	
 	return tunknown();
@@ -211,30 +192,24 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
       return typeOf(exp, tenv, useDef);
     case not(AExpr exp):
       return typeOf(exp, tenv, useDef);
-    case mul(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case dif(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case sum(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case min(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case less(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case leq(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case greater(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case geq(AExpr lhs, AExpr rhs):
-  	  return typeOfInteger(lhs, rhs, tenv, useDef);
-    case eq(AExpr lhs, AExpr rhs):
-  	  return typeOfAny(lhs, rhs, tenv, useDef);
-    case neq(AExpr lhs, AExpr rhs):
-  	  return typeOfAny(lhs, rhs, tenv, useDef);
-    case and(AExpr lhs, AExpr rhs):
-  	  return typeOfBoolean(lhs, rhs, tenv, useDef);
-    case or(AExpr lhs, AExpr rhs):
-  	  return typeOfBoolean(lhs, rhs, tenv, useDef);
+  }
+  if(	mul(AExpr lhs, AExpr rhs) := e ||
+		div(AExpr lhs, AExpr rhs) := e ||  		
+		sum(AExpr lhs, AExpr rhs) := e ||  		
+		min(AExpr lhs, AExpr rhs) := e ||  		
+		less(AExpr lhs, AExpr rhs) := e ||  		
+		leq(AExpr lhs, AExpr rhs) := e ||  		
+		greater(AExpr lhs, AExpr rhs) := e ||  		
+		geq(AExpr lhs, AExpr rhs) := e	
+  	){
+	return tint();
+  }
+  if(	eq(AExpr lhs, AExpr rhs) := e ||
+		neq(AExpr lhs, AExpr rhs) := e ||
+		and(AExpr lhs, AExpr rhs) := e ||
+  		or(AExpr lhs, AExpr rhs) := e
+  	){
+	return tbool();
   }
   return tunknown(); 
 }
