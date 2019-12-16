@@ -192,7 +192,7 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
     case brackets(AExpr exp):
       return typeOf(exp, tenv, useDef);
     case not(AExpr exp):
-      return typeOf(exp, tenv, useDef);
+      return tbool();
   }
   if(	mul(AExpr lhs, AExpr rhs) := e ||
 		div(AExpr lhs, AExpr rhs) := e ||  		
