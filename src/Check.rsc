@@ -106,7 +106,8 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 	case brackets(AExpr e):
 	  msgs += check(e, tenv, useDef);
 	case not(AExpr e):
-	  msgs += check(e, tenv, useDef);
+	  msgs += 	check(e, tenv, useDef) +
+	  			checkType(e, tbool(), tenv, useDef);
 	}  
   if(	mul(AExpr lhs, AExpr rhs) := e ||
 		div(AExpr lhs, AExpr rhs) := e ||  		
