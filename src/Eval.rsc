@@ -37,10 +37,11 @@ VEnv eval(AForm f, Input inp, VEnv venv) {
   return solve (venv) {
     venv = evalOnce(f, inp, venv);
   }
+  return (); // shutup eclipse.
 }
 
 VEnv evalOnce(AForm f, Input inp, VEnv venv) {
-  return (); 
+  return venv; 
 }
 
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
@@ -51,10 +52,24 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
 
 Value eval(AExpr e, VEnv venv) {
   switch (e) {
-    //case ref(str x): return venv[x];
-    
-    // etc.
-    
+    case ref(AId x): return venv[x.name];
+    case string(str s): return vstr(s);
+    case integer(int i): return vint(i);
+    case boolean(bool b): return vbool(b);
+  	case brackets(AExpr expr): return eval(e, venv);
+    case not(AExpr expr): return vbool(!eval(expr, venv).b);
+    case mul(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n * eval(rhs, venv).n);
+    case div(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n / eval(rhs, venv).n);
+    case sum(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n + eval(rhs, venv).n);
+    case min(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n - eval(rhs, venv).n);
+    case less(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv).n < eval(rhs, venv).n);
+    case leq(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv).n <= eval(rhs, venv).n);
+    case greater(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv).n > eval(rhs, venv).n);
+    case geq(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv).n >= eval(rhs, venv).n);
+    case eq(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv) == eval(rhs, venv)); 
+    case neq(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv) != eval(rhs, venv));
+    case and(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv).b && eval(rhs, venv).b);
+    case or(AExpr lhs, AExpr rhs): return vbool(eval(lhs, venv).b || eval(rhs, venv).b);
     default: throw "Unsupported expression <e>";
   }
 }
