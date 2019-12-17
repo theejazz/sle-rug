@@ -3,6 +3,7 @@ module Eval
 import AST;
 import Resolve;
 import IO; //debug
+import List;
 
 /*
  * Implement big-step semantics for QL
@@ -83,20 +84,16 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate inp and computed questions to return updated VEnv
   switch (q) {
     case if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs):
-      //wow this is ugly
-      if (eval(e, venv) == vbool(true)) {
-        for (q <- if_qs) {
-          venv = eval(q, inp, venv);
-        }
-      } else {
-        for (q <- else_qs) {
-          venv = eval(q, inp, venv);
+      {
+        qs = (eval(e, venv) == vbool(true)) ? if_qs : else_qs;
+        for (question <- qs) {
+          venv = eval(question, inp, venv);
         }
       }
     case if_then(AExpr e, list[AQuestion] if_qs):
       if (eval(e, venv) == vbool(true)) {
-        for (q <- if_qs) {
-          venv = eval(q, inp, venv);
+        for (question <- if_qs) {
+          venv = eval(question, inp, venv);
         }
       }
     case computed_question(ALabel lbl, AId id, AType t, AExpr e):
@@ -106,8 +103,8 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
         venv[id.name] = inp[1];
       }
     case block(list[AQuestion] qs):
-      for (q <- qs) {
-        venv = eval(q, inp, venv);
+      for (question <- qs) {
+        venv = eval(question, inp, venv);
       }
   }
   return venv;
@@ -115,7 +112,7 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
 
 Value eval(AExpr e, VEnv venv) {
   switch (e) {
-    case ref(AId x): return venv[x.name];
+    case ref(AId x): { return venv[x.name]; }
     case string(str s): return vstr(s);
     case integer(int i): return vint(i);
     case boolean(bool b): return vbool(b);
