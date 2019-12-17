@@ -2,6 +2,7 @@ module Eval
 
 import AST;
 import Resolve;
+import IO; //debug
 
 /*
  * Implement big-step semantics for QL
@@ -27,7 +28,37 @@ data Input
 // produce an environment which for each question has a default value
 // (e.g. 0 for int, "" for str etc.)
 VEnv initialEnv(AForm f) {
-  return ();
+  return initialEnv(f.questions);
+}
+
+VEnv initialEnv(list[AQuestion] qs) {
+  VEnv venv = ();
+  for (q <- qs) {
+    switch(q) { 
+      case if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs):
+        venv += initialEnv(if_qs) + initialEnv(else_qs);
+      case if_then(AExpr e, list[AQuestion] if_qs):
+        venv += initialEnv(if_qs);
+      case computed_question(ALabel lbl, AId id, AType t, AExpr e):
+        venv[id.name] = initialEnv(t);
+      case question(ALabel lbl, AId id, AType t):
+        venv[id.name] = initialEnv(t);
+      case block(list[AQuestion] qs):
+        venv += initialEnv(qs);
+     }
+  }
+  return venv;
+}
+
+Value initialEnv(AType \type) {
+  switch(\type) {
+    case string():
+      return vstring("");
+    case integer():
+      return vint(0);
+    case boolean():
+      return vbool(false);
+  }
 }
 
 
