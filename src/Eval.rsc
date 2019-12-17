@@ -68,17 +68,49 @@ VEnv eval(AForm f, Input inp, VEnv venv) {
   return solve (venv) {
     venv = evalOnce(f, inp, venv);
   }
-  return (); // shutup eclipse.
+  //return (); // shutup eclipse.
 }
 
 VEnv evalOnce(AForm f, Input inp, VEnv venv) {
+  for (q <- f.questions) {
+    venv = eval(q, inp, venv);
+  }
   return venv; 
 }
 
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate conditions for branching,
   // evaluate inp and computed questions to return updated VEnv
-  return (); 
+  switch (q) {
+    case if_then_else(AExpr e, list[AQuestion] if_qs, list[AQuestion] else_qs):
+      //wow this is ugly
+      if (eval(e, venv) == vbool(true)) {
+        for (q <- if_qs) {
+          venv = eval(q, inp, venv);
+        }
+      } else {
+        for (q <- else_qs) {
+          venv = eval(q, inp, venv);
+        }
+      }
+    case if_then(AExpr e, list[AQuestion] if_qs):
+      if (eval(e, venv) == vbool(true)) {
+        for (q <- if_qs) {
+          venv = eval(q, inp, venv);
+        }
+      }
+    case computed_question(ALabel lbl, AId id, AType t, AExpr e):
+      venv[id.name] = eval(e, venv);
+    case question(ALabel lbl, AId id, AType t):
+      if (lbl.label == inp[0]) {
+        venv[id.name] = inp[1];
+      }
+    case block(list[AQuestion] qs):
+      for (q <- qs) {
+        venv = eval(q, inp, venv);
+      }
+  }
+  return venv;
 }
 
 Value eval(AExpr e, VEnv venv) {
