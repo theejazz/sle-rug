@@ -197,15 +197,15 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
   if(	mul(AExpr lhs, AExpr rhs) := e ||
 		div(AExpr lhs, AExpr rhs) := e ||  		
 		sum(AExpr lhs, AExpr rhs) := e ||  		
-		min(AExpr lhs, AExpr rhs) := e ||  		
-		less(AExpr lhs, AExpr rhs) := e ||  		
-		leq(AExpr lhs, AExpr rhs) := e ||  		
-		greater(AExpr lhs, AExpr rhs) := e ||  		
-		geq(AExpr lhs, AExpr rhs) := e	
+		min(AExpr lhs, AExpr rhs) := e
   	){
 	return tint();
   }
-  if(	eq(AExpr lhs, AExpr rhs) := e ||
+  if(	less(AExpr lhs, AExpr rhs) := e ||  		
+		leq(AExpr lhs, AExpr rhs) := e ||  		
+		greater(AExpr lhs, AExpr rhs) := e ||  		
+		geq(AExpr lhs, AExpr rhs) := e	||
+		eq(AExpr lhs, AExpr rhs) := e ||
 		neq(AExpr lhs, AExpr rhs) := e ||
 		and(AExpr lhs, AExpr rhs) := e ||
   		or(AExpr lhs, AExpr rhs) := e
