@@ -144,7 +144,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 }
 
 set[Message] checkType(AExpr e, Type t, TEnv tenv, UseDef useDef){
-  return {error("Operator requires type: [" + type2str(t) + "]", e.src) | typeOf(e, tenv, useDef) != t};
+  return {error("Operator requires type: [" + type2str(t) + "]", e.src) | (typeOf(e, tenv, useDef) != t /* && typeOf(e, tenv, useDef) != tunknown() */ )};
 }
 
 Type typeOfInteger(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
@@ -205,7 +205,7 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
 		leq(AExpr lhs, AExpr rhs) := e ||  		
 		greater(AExpr lhs, AExpr rhs) := e ||  		
 		geq(AExpr lhs, AExpr rhs) := e	||
-		eq(AExpr lhs, AExpr rhs) := e ||
+		eql(AExpr lhs, AExpr rhs) := e ||
 		neq(AExpr lhs, AExpr rhs) := e ||
 		and(AExpr lhs, AExpr rhs) := e ||
   		or(AExpr lhs, AExpr rhs) := e

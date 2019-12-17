@@ -80,7 +80,7 @@ AExpr cst2ast(Expr e) {
     case (Expr) `<Expr e1> \>= <Expr e2>`: 
       return geq(cst2ast(e1), cst2ast(e2), src=e@\loc);
     case (Expr) `<Expr e1> == <Expr e2>`: 
-      return eq(cst2ast(e1), cst2ast(e2), src=e@\loc);
+      return eql(cst2ast(e1), cst2ast(e2), src=e@\loc);
     case (Expr) `<Expr e1> != <Expr e2>`: 
       return neq(cst2ast(e1), cst2ast(e2), src=e@\loc);
     case (Expr) `<Expr e1> && <Expr e2>`: 
