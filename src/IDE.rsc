@@ -7,6 +7,7 @@ import Resolve;
 import Check;
 import Compile;
 
+import IO;
 import util::IDE;
 import Message;
 import ParseTree;
@@ -58,5 +59,10 @@ set[Message] checkQL(loc file){
 	<_,_,usedef> = resolve(ast);
 	tenv = collect(ast);
 	return check(ast, tenv, usedef);
+}
+
+void compileQL(loc file){
+  ast = astQL(file);
+  print(form2js(ast));
 }
 

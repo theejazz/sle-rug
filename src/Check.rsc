@@ -157,16 +157,6 @@ Type typeOfInteger(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 	return tunknown();
 }
 
-Type typeOfBoolean(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
-	tlhs = typeOf(lhs, tenv, useDef);
-	trhs = typeOf(rhs, tenv, useDef);
-	if(tlhs == tbool() && trhs == tbool()){
-		return tbool();
-	}
-	
-	return tunknown();
-}
-
 Type typeOfComp(AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef){
 	tlhs = typeOf(lhs, tenv, useDef);
 	trhs = typeOf(rhs, tenv, useDef);
