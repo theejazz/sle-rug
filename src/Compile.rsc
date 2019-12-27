@@ -20,47 +20,252 @@ import lang::html5::DOM; // see standard library
  * - if needed, use the name analysis to link uses to definitions
  */
 
+HTML5Attr vmodel(value val) = html5attr("v-model", val);
+HTML5Attr vif(value val) = html5attr("v-if", val);
+
 void compile(AForm f) {
   writeFile(f.src[extension="js"].top, form2js(f));
   writeFile(f.src[extension="html"].top, toString(form2html(f)));
 }
 
 HTML5Node form2html(AForm f) {
-  return html();
+  return 
+  html(
+    head(
+      meta(charset("UTF-8")),
+      script(src("https://cdn.jsdelivr.net/vue/0.12.16/vue.min.js"))
+    ),
+    body(
+      questions2html(div(id("form")), f.questions, resolve(f)[1]),
+      script(src(f.src[extension="js"].file))
+    )
+  );
+/*
+            "<!DOCTYPE html>
+            '<html>
+            '  <head>
+            '    <meta charset="UTF-8">
+            '    <script src="https://cdn.jsdelivr.net/vue/0.12.16/vue.min.js"></script>
+            '  </head>
+            '  <body>
+            '    <div id="form">
+            '    </div>
+            '    <script src="mtax.js"></script>
+            '  </body>
+            '</html>i
+            ";
+*/
 }
 
-str form2js(AForm f)
-  = "var form = new Vue({
-    '  el: \'form\',
-    '  data:{<for(question(_, AId id, AType t) <- f.questions){>
-    '    <id.name>: <t == boolean() ? "false" : "null">,
-    '  <}>},
-    '  computed:{
-    '  }
-    '})";
+HTML5Node questions2html(HTML5Node parent, list[AQuestion] questions, Def defs){
+  
+  for(question <- questions){
+    parent.kids += [question2html(question, defs)];
+  }
 
-list [AQuestion] getQuestions(AQuestion q){
+  return parent;
+}
+
+HTML5Node question2html(AQuestion question, Def defs){
+  switch(question){
+    case question(label,id,t):
+      return div(class("question"),
+               strong("<label.label>:"),
+               question2html("<id.name><id.src.begin.line>", t)
+             );
+    case computed_question(label, id,_,_):
+      return div(class("computed"),
+               strong("<label.label>:"),
+                 strong("{{<id.name><id.src.begin.line>}}")
+             );
+    case block(list [Aquestion] questions):
+      return questions2html(div(class("block")), questions, defs);
+    case if_then(AExpr exp, list [AQuestion] if_qs):
+      return questions2html(div(class("if"), vif(eq2html(exp, defs))), if_qs, defs);
+    case if_then_else(AExpr exp, list [AQuestion] if_qs, list[AQuestion] else_qs):
+      return div(
+               questions2html(div(class("if"), vif(eq2html(exp, defs))), if_qs, defs),
+               questions2html(div(class("else"), vif("!(<eq2html(exp,defs)>)")), else_qs, defs) 
+               );
+    default:
+      throw("Unsupported question: <question>");
+  }
+}
+
+HTML5Node question2html(str var, AType t){
+  switch(t){
+    case string():
+      return input(vmodel(var));
+    case integer():
+      return input(\type("number"), vmodel(var));
+    case boolean():
+      return input(\type("checkbox"), vmodel(var));
+    default:
+      throw("Unsuported type: <t>");
+  }
+}
+
+str form2js(AForm f) {
+  //<qs, cqs> = getQuestions(f.questions);
+  qs = {<id.name, id.src.begin.line, t> | /question(_, id, t) := f};
+  cqs = {<id.name, id.src.begin.line, e> | /computed_question(_, id, _, e) := f};
+  
+  <_,def,_> = resolve(f);
+  
+  str js = 
+          "var form = new Vue({
+          '  el: \'#form\',
+          '  data: {\n";
+  
+  for(q <- qs){
+    js += "    <q[0]><q[1]>: <(q[2] == boolean() ? "false" : "null")>,\n";
+  }
+  
+  js +=   "  },
+          '  computed: {\n";
+  
+  for(q <- cqs){
+    js += "    <q[0]><q[1]>: function() {\n";
+    js += "      return <eq2js(q[2], def)>;\n"; 
+    js += "    },\n";
+  }
+          
+  js +=   "  },
+          '});
+          ";
+  return js;
+}
+
+tuple[list [AQuestion], list [AQuestion]] getQuestions(AQuestion q){
   list[AQuestion] qs = [];
+  list[AQuestion] cqs = [];
   switch(q){
+    case if_then_else(_, list[AQuestion] if_qs, list[AQuestion] else_qs): {
+      <qqs, qcqs> = getQuestions(if_qs);
+      qs += qqs;
+      cqs += qcqs;
+      <qqs, qcqs> = getQuestions(else_qs);
+      qs += qqs;
+      cqs += qcqs;
+    }  
+    case if_then(_, list[AQuestion] if_qs): {
+      <qqs, qcqs> = getQuestions(if_qs);
+      qs += qqs;
+      cqs += qcqs;
+    }
+    case computed_question(_, AId id, AType t, AExpr e):
+      cqs += [q];
     case question(_, AId id, AType t): 
       qs += [q];
-    case if_then(_, list[AQuestion] if_qs):
-      qs += getQuestions(if_qs);
-    case if_then_else(_, list[AQuestion] if_qs, list[AQuestion] else_qs):
-      qs += getQuestions(if_qs)
-          + getQuestions(else_qs);
-    case block(list[AQuestion] block_qs):
-      qs += getQuestions(block_qs);
-  }
-  return qs;
-}
-
-list [AQuestion] getQuestions(list [AQuestion] qs){
-  list [AQuestion] questions = [];
-  for(qq <- qs){
-    for(q <- getQuestions(qq)){
-      questions += [q];
+    case block(list[AQuestion] block_qs): {
+      <qqs, qcqs> = getQuestions(block_qs);
+      qs += qqs;
+      cqs += qcqs;
     }
   }
-  return questions;   
+  return <qs,cqs>;
+}
+
+tuple[list [AQuestion], list [AQuestion]] getQuestions(list [AQuestion] questions){
+  list [AQuestion] qs = [];
+  list [AQuestion] cqs = [];
+  for(q <- questions){
+    <qqs, qcqs> = getQuestions(q);
+    qs += qqs;
+    cqs += qcqs;
+  }
+  return <qs, cqs>;   
+}
+str eq2html(AExpr e, Def defs){
+  switch(e){
+    case ref(AId id):
+      return "<id.name><getDef(id.name, id.src, defs).begin.line>";
+    case string(str s):
+      return "<s>";
+    case integer(int i):
+      return "<i>";
+    case boolean(bool b):
+      return (b ? "true" : "false");
+    case brackets(AExpr expr):
+      return "(<eq2js(expr, defs)>)";
+    case not(AExpr expr):
+      return "!<eq2js(expr, defs)>";
+    case mul(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> * <eq2js(rhs, defs)>";
+    case div(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> / <eq2js(rhs, defs)>";
+    case sum(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> + <eq2js(rhs, defs)>";
+    case min(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> - <eq2js(rhs, defs)>";
+    case less(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> \< <eq2js(rhs, defs)>";
+    case leq(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> \<= <eq2js(rhs, defs)>";
+    case greater(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> \> <eq2js(rhs, defs)>";
+    case geq(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> \>= <eq2js(rhs, defs)>";
+    case eql(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> == <eq2js(rhs, defs)>";
+    case neq(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> != <eq2js(rhs, defs)>";
+    case and(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> && <eq2js(rhs, defs)>";
+    case or(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> || <eq2js(rhs, defs)>";
+  }
+  return "\"\"";
+}
+
+str eq2js(AExpr e, Def defs){
+  switch(e){
+    case ref(AId id):
+      return "this.<id.name><getDef(id.name, id.src, defs).begin.line>";
+    case string(str s):
+      return "<s>";
+    case integer(int i):
+      return "<i>";
+    case boolean(bool b):
+      return (b ? "true" : "false");
+    case brackets(AExpr expr):
+      return "(<eq2js(expr, defs)>)";
+    case not(AExpr expr):
+      return "!<eq2js(expr, defs)>";
+    case mul(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) * parseInt(<eq2js(rhs, defs)>,10)";
+    case div(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) / parseInt(<eq2js(rhs, defs)>,10)";
+    case sum(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) + parseInt(<eq2js(rhs, defs)>,10)";
+    case min(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) - parseInt(<eq2js(rhs, defs)>,10)";
+    case less(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) \< parseInt(<eq2js(rhs, defs)>,10)";
+    case leq(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) \<= parseInt(<eq2js(rhs, defs)>,10)";
+    case greater(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) \> parseInt(<eq2js(rhs, defs)>,10)";
+    case geq(AExpr lhs, AExpr rhs):
+      return "parseInt(<eq2js(lhs, defs)>,10) \>= parseInt(<eq2js(rhs, defs)>,10)";
+    case eql(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> == <eq2js(rhs, defs)>";
+    case neq(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> != <eq2js(rhs, defs)>";
+    case and(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> && <eq2js(rhs, defs)>";
+    case or(AExpr lhs, AExpr rhs):
+      return "<eq2js(lhs, defs)> || <eq2js(rhs, defs)>";
+  }
+  return "\"\"";
+}
+
+loc getDef(str name, loc src, Def defs){
+  loc dl = src;
+  for(<n, l> <- defs){
+    if(n == name && l.begin.line < src.begin.line && (dl.begin.line < l.begin.line || dl == src)){
+      dl = l;
+    }
+  }
+  return dl;
 }

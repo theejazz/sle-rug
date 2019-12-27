@@ -64,5 +64,6 @@ set[Message] checkQL(loc file){
 void compileQL(loc file){
   ast = astQL(file);
   print(form2js(ast));
+  compile(ast);
 }
 
