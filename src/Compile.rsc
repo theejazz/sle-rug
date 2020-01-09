@@ -5,6 +5,7 @@ import Resolve;
 import Eval;
 import IO;
 import Set;
+import String;
 import lang::html5::DOM; // see standard library
 
 /*
@@ -33,10 +34,17 @@ HTML5Node form2html(AForm f) {
   html(
     head(
       meta(charset("UTF-8")),
-      script(src("https://cdn.jsdelivr.net/vue/0.12.16/vue.min.js"))
+      script(src("https://cdn.jsdelivr.net/vue/0.12.16/vue.min.js")),
+      link(\rel("stylesheet"), href("https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css")),
+      link(\rel("stylesheet"), href("styles.css"))
     ),
     body(
-      questions2html(div(id("form")), f.questions, resolve(f)[1]),
+      div(
+        class("container"),
+        h1(class("title"), "<f.src[extension=""].file>"),
+        hr(),
+        questions2html(table(id("form")), f.questions, resolve(f)[1])
+      ),
       script(src(f.src[extension="js"].file))
     )
   );
@@ -60,36 +68,55 @@ HTML5Node form2html(AForm f) {
 HTML5Node questions2html(HTML5Node parent, list[AQuestion] questions, Def defs){
   
   for(question <- questions){
-    parent.kids += [question2html(question, defs)];
+    parent = question2html(parent, question, defs);
   }
 
   return parent;
 }
 
-HTML5Node question2html(AQuestion question, Def defs){
+HTML5Node question2html(HTML5Node parent, AQuestion question, Def defs){
   switch(question){
     case question(label,id,t):
-      return div(class("question"),
-               strong("<label.label>:"),
-               question2html("<id.name><id.src.begin.line>", t)
-             );
+      parent.kids += [tr(class("question"),
+               td(div(class("label"),strong(replaceAll(label.label, "\"", "")))),
+               td(div(class("input"),question2html("<id.name><id.src.begin.line>", t)))
+             )];
     case computed_question(label, id,_,_):
-      return div(class("computed"),
-               strong("<label.label>:"),
-                 strong("{{<id.name><id.src.begin.line>}}")
-             );
-    case block(list [Aquestion] questions):
-      return questions2html(div(class("block")), questions, defs);
+      parent.kids += [tr(class("computed"),
+               td(div(class("label"),strong(replaceAll(label.label, "\"", "")))),
+               td(div(class("output"),strong("{{<id.name><id.src.begin.line>}}")))
+             )];
+    case block(list [AQuestion] questions):
+      parent.kids += [
+        tr(class("block"),
+          td(colspan("2"), 
+            questions2html(table(), questions, defs)
+            )
+          )];
     case if_then(AExpr exp, list [AQuestion] if_qs):
-      return questions2html(div(class("if"), vif(eq2html(exp, defs))), if_qs, defs);
-    case if_then_else(AExpr exp, list [AQuestion] if_qs, list[AQuestion] else_qs):
-      return div(
-               questions2html(div(class("if"), vif(eq2html(exp, defs))), if_qs, defs),
-               questions2html(div(class("else"), vif("!(<eq2html(exp,defs)>)")), else_qs, defs) 
-               );
+      parent.kids += [
+        tr(class("if"), vif(eq2html(exp, defs)), 
+          td(colspan("2"),
+            questions2html(table(), if_qs, defs)
+            )
+          )];
+    case if_then_else(AExpr exp, list [AQuestion] if_qs, list[AQuestion] else_qs): {
+      parent.kids += [
+        tr(class("if"), vif(eq2html(exp, defs)), 
+          td(colspan("2"),
+            questions2html(table(class("subtable")), if_qs, defs)
+            )
+          ),
+        tr(class("else"), vif("!(<eq2html(exp,defs)>)"),
+          td(colspan("2"),
+            questions2html(table(class("subtable")),else_qs,defs)
+            )
+          )];
+    }
     default:
       throw("Unsupported question: <question>");
   }
+  return parent;
 }
 
 HTML5Node question2html(str var, AType t){

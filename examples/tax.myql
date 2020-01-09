@@ -14,18 +14,32 @@ form taxOfficeExample {
   if (hasSoldHouse) {
     "What was the selling price?"
       sellingPrice: integer
-    "Private debts for the sold house:"
-      privateDebt: integer
-    "Value residue 1:"
-      valueResidue: integer = sellingPrice - privateDebt
-    "Same as Above:"
-      valueResidueCheck1: integer = valueResidue
-    "Value residue 2:"
-      valueResidue: integer = sellingPrice + privateDebt
-    "Same as Above:"
-      valueResidueCheck2: integer = valueResidue
+    {  
+      "Private debts for the sold house:"
+        privateDebt: integer
+      { 
+        "Value residue 1:"
+          valueResidue: integer = sellingPrice - privateDebt
+        {
+          "Same as Above:"
+            valueResidueCheck1: integer = valueResidue
+          {
+            "Value residue 2:"
+              valueResidue: integer = sellingPrice + privateDebt
+            {
+              "Same as Above:"
+                valueResidueCheck2: integer = valueResidue
+            }
+          }
+        }
+      }
+    }  
   } else {
     "Why didn't you sell a house in 2010?"
       whynosell: string
+    if (hasMaintLoan) {
+      "Why did you enter a loan?"
+        whyenterloan: string
+    }
   }
 }
