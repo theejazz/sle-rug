@@ -51,13 +51,36 @@ void main() {
   registerContributions(MyQL, contribs);
 }
 
+loc getBinary(){
+  return |project://QL/examples/binary.myql|;
+}
+
+loc getCyclic(){
+  return |project://QL/examples/cyclic.myql|;
+}
+
+loc getEmpty(){
+  return |project://QL/examples/empty.myql|;
+}
+
+loc getErrors(){
+  return |project://QL/examples/errors.myql|;
+}
+
+loc getTax(){
+  return |project://QL/examples/tax.myql|;
+}
+
+start[Form] parseQL(loc file){
+  return parse(#start[Form], file);
+}
+
 AForm astQL(loc file){
-	return cst2ast(parse(#Form, file));
+	return cst2ast(parseQL(file));
 }
 
 set[Message] checkQL(loc file){
-	ast = cst2ast(parse(#Form, file));
-  check(ast);
+  return checkQL(astQL);
 }
 
 set[Message] checkQL(AForm ast){
@@ -74,15 +97,6 @@ void compileQL(loc file){
 void compileQL(AForm ast){
   compile(ast);
 }
-
-/*
-use : def
-b@2 : b@1
-b@4 : b@1
-
-
-
-*/
 
 AForm flattenQL(loc file){
   ast = astQL(file);
